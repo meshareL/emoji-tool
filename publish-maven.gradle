@@ -1,0 +1,80 @@
+apply plugin: 'signing'
+apply plugin: 'maven-publish'
+
+def properties = new Properties()
+file('./publish.properties').withInputStream { properties.load(it) }
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        allprojects {
+            ext.'signing.keyId' = properties.getProperty('signing.keyId')
+            ext.'signing.password' = properties.getProperty('signing.password')
+            ext.'signing.secretKeyRingFile' = properties.getProperty('signing.secretKeyRingFile')
+        }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = project.name
+            from components.java
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+
+            pom {
+                name = 'Emoji tool'
+                description = 'Java library for handling emoji'
+                url = 'https://github.com/meshareL/emoji-tool'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution = 'repo'
+                    }
+                }
+
+                developers {
+                    developer {
+                        name = 'MengYao Lu'
+                        email = 'meshareLu@qq.com'
+                    }
+                }
+
+                issueManagement {
+                    system = 'Github'
+                    url = 'https://github.com/meshareL/emoji-tool/issues'
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/meshareL/emoji-tool.git'
+                    developerConnection = 'scm:git:git@github.com:meshare/emoji-tool.git'
+                    url = 'https://github.com/meshareL/emoji-tool'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+            credentials {
+                username = properties.getProperty('sonatype.username')
+                password = properties.getProperty('sonatype.password')
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+    sign configurations.archives
+}
