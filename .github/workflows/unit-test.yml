@@ -1,0 +1,30 @@
+name: unit-test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os-version }}
+    strategy:
+      matrix:
+        os-version: [ macos-latest, windows-latest, ubuntu-latest ]
+        java-version: [ 8, 9, 10, 11, 12, 13, 14 ]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@1
+        with:
+          java-version: ${{ matrix.java-version }}
+          java-package: jdk
+
+      - name: Build
+        run: ./gradlew build -x test
+
+      - name: Test
+        run: ./gradlew test
